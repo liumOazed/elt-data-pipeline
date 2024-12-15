@@ -71,7 +71,22 @@ services:
               airflow users create --username airflow --password password --firstname John --lastname Doe --role Admin --email admin@example.com"
 
   webserver:
-    build: path
+    build:
+      context: .
+      dockerfile: Dockerfile
+    user: root
+    depends_on:
+      - postgres
+    networks:
+      - elt_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./elt:/opt/airflow/elt
+      - ./custom_postgres:/opt/dbt
+      - ~/.dbt:/root/.dbt
+      - /var/run/docker.sock:/var/run/docker.sock
 
 networks:
   elt_network:
