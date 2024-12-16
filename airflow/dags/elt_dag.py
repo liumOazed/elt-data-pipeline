@@ -3,7 +3,7 @@ from airflow import DAG
 from docker.types import Mount ## because u r orchestrating docker services or docker containers u need a specific docker type comes form airflow to actually orchestrate them
 from airflow.operators.python_operator import PythonOperator ## crucial because our elt_cript is a python script
 from airflow.operators.bash import BashOperator ## crucial because we need to execute a bash command
-from airflow.operators.docker import DockerOperator
+from airflow.providers.docker.operators.docker import DockerOperator
 import subprocess 
 
 default_args = {
@@ -52,7 +52,7 @@ t2 = DockerOperator(
         "--profiles-dir",
         "/root",
         "--project-dir",
-        "/dbt"
+        "/opt/dbt"
     ],
     auto_remove=True,
     docker_url="unix://var/run/docker.sock",
@@ -60,7 +60,7 @@ t2 = DockerOperator(
     mounts=[
         Mount(
             source='/home/zed/elt-data-pipeline/custom_postgres',
-            target='/dbt',
+            target='/opt/dbt',
             type='bind'
         ),
          Mount(
