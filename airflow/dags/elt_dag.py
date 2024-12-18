@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from airflow import DAG
 from docker.types import Mount ## because u r orchestrating docker services or docker containers u need a specific docker type comes form airflow to actually orchestrate them
-from airflow.operators.python_operator import PythonOperator ## crucial because our elt_cript is a python script
+from airflow.operators.python import PythonOperator ## crucial because our elt_cript is a python script
 from airflow.operators.bash import BashOperator ## crucial because we need to execute a bash command
 from airflow.providers.docker.operators.docker import DockerOperator
 import subprocess 
@@ -14,7 +14,7 @@ default_args = {
 }
 
 def run_elt_script():
-    script_path = '/opt/airflow/elt/elt_script.py'# we pointed directly to the path of the elt script in the docker container
+    script_path = '/opt/airflow/elt_script/elt_script.py'# we pointed directly to the path of the elt script in the docker container
     result = subprocess.run(['python', script_path], capture_output=True, text=True)
     # control structure
     if result.returncode != 0:
@@ -39,7 +39,7 @@ dag = DAG(
 t1 = PythonOperator(
     task_id='run_elt_script',
     python_callable=run_elt_script,
-    dag=dag
+    dag=dag,
 )
 
 # task 2 and its dbt
@@ -52,15 +52,16 @@ t2 = DockerOperator(
         "--profiles-dir",
         "/root",
         "--project-dir",
-        "/opt/dbt"
+        "/dbt",
+        "--full-refresh"
     ],
     auto_remove=True,
     docker_url="unix://var/run/docker.sock",
-    network_mode="bridge",
+    network_mode="elt-data-pipeline_elt_network",
     mounts=[
         Mount(
             source='/home/zed/elt-data-pipeline/custom_postgres',
-            target='/opt/dbt',
+            target='/dbt',
             type='bind'
         ),
          Mount(
